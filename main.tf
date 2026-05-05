@@ -15,3 +15,18 @@ EOT
     always_run = timestamp()
   }
 }
+
+
+# Add Apache
+resource "null_resource" "apache" {
+  provisioner "local-exec" {
+    command = <<EOT
+      docker rm -f apache-server || true
+      docker run -d --name apache-server -p ${var.app_port}:80 httpd:latest
+EOT
+  }
+
+  triggers = {
+    always_run = timestamp()
+  }
+}

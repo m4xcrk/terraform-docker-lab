@@ -7,7 +7,7 @@ resource "null_resource" "nginx" {
   connection {
     type        = "ssh"
     user        = "ubuntu"
-    private_key = file("~/.ssh/id_ed25519")
+    private_key = file(var.ssh_key_path)
     host        = "192.168.2.12"
   }
 
@@ -26,7 +26,7 @@ resource "null_resource" "apache" {
   connection {
     type        = "ssh"
     user        = "ubuntu"
-    private_key = file("~/.ssh/id_ed25519")
+    private_key = file(var.ssh_key_path)
     host        = "192.168.2.13"
   }
 
@@ -59,7 +59,7 @@ resource "null_resource" "prometheus" {
   connection {
     type        = "ssh"
     user        = "ubuntu"
-    private_key = file("~/.ssh/id_ed25519")
+    private_key = file(var.ssh_key_path)
     host        = "192.168.2.12"
   }
 
@@ -78,7 +78,7 @@ resource "null_resource" "grafana" {
   connection {
     type        = "ssh"
     user        = "ubuntu"
-    private_key = file("~/.ssh/id_ed25519")
+    private_key = file(var.ssh_key_path)
     host        = "192.168.2.12"
   }
 

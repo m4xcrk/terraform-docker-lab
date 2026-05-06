@@ -1,0 +1,16 @@
+---
+- name: Install Monitoring Sensors
+  hosts: web_servers
+  become: yes
+  tasks:
+    - name: Install Node Exporter
+      apt:
+        name: prometheus-node-exporter
+        state: present
+        update_cache: yes
+
+    - name: Ensure Node Exporter is running
+      service:
+        name: prometheus-node-exporter
+        state: started
+        enabled: yes

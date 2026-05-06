@@ -54,3 +54,41 @@ EOT
   filename = "${path.module}/inventory.ini"
 }
 
+# Monitoring: Prometheus Container
+resource "null_resource" "prometheus" {
+  connection {
+    type        = "ssh"
+    user        = "ubuntu"
+    private_key = file("~/.ssh/id_ed25519")
+    host        = "192.168.2.12"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "sudo docker rm -f prometheus || true",
+      "sudo docker run -d --name prometheus -p 9090:9090 prom/prometheus"
+    ]
+  }
+
+  triggers = { always_run = timestamp() }
+}
+
+# Monitoring: Grafana Container
+resource "null_resource" "grafana" {
+  connection {
+    type        = "ssh"
+    user        = "ubuntu"
+    private_key = file("~/.ssh/id_ed25519")
+    host        = "192.168.2.12"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "sudo docker rm -f grafana || true",
+      "sudo docker run -d --name grafana -p 3000:3000 grafana/grafana"
+    ]
+  }
+
+  triggers = { always_run = timestamp() }
+}
+

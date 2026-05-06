@@ -26,3 +26,19 @@ jobs:
       - name: Terraform Validate
         # We point to main.tf just to satisfy the file() function check
         run: terraform validate -var="ssh_key_path=main.tf"
+
+  secrets-scan:
+    name: Secret Scanning
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Secret Scan
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+

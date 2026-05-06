@@ -1,0 +1,23 @@
+---
+- name: Hardening and Customizing Containers
+  hosts: web_servers
+  tasks:
+    - name: Ensure website directory exists
+      file:
+        path: /home/ubuntu/html
+        state: directory
+
+    - name: Create custom Production Landing Page
+      copy:
+        content: "<h1>PROD SERVER: {{ inventory_hostname }}</h1><p>Status: Healthy</p>"
+        dest: /home/ubuntu/html/index.html
+
+    - name: Sync HTML to Nginx (VM-01)
+      shell: "docker cp /home/ubuntu/html/index.html terraform-local-server:/usr/share/nginx/html/index.html"
+      when: inventory_hostname == 'vm01'
+
+    - name: Sync HTML to Apache (VM-02)
+      # Apache uses a different path (/usr/local/apache2/htdocs/)
+      shell: "docker cp /home/ubuntu/html/index.html apache-server:/usr/local/apache2/htdocs/index.html"
+      when: inventory_hostname == 'vm02'
+

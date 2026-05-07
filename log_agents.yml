@@ -1,0 +1,13 @@
+---
+- name: Setup Log Forwarding
+  hosts: all
+  become: yes
+  tasks:
+    - name: Install Promtail
+      apt: { name: promtail, state: present, update_cache: yes }
+    - name: Configure Promtail to send to VM-01
+      template:
+        src: promtail-config.j2
+        dest: /etc/promtail/config.yml
+      notify: Restart Promtail
+

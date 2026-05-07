@@ -1,0 +1,37 @@
+---
+- name: Configure Docker Load Balancer
+  hosts: lb
+  become: yes
+  tasks:
+    - name: Stop and disable the system Nginx (freeing Port 80)
+      service:
+        name: nginx
+        state: stopped
+        enabled: no
+      ignore_errors: yes
+
+    - name: Create local config directory
+      file:
+        path: /home/ubuntu/nginx
+        state: directory
+
+    - name: Create Nginx Proxy Config for Docker
+      copy:
+        content: |
+          upstream my_app {
+            server 192.168.2.13:8086;
+            server 192.168.2.15:8086;
+          }
+          server {
+            listen 80;
+            location / {
+              proxy_pass http://my_app;
+            }
+          }
+        dest: /home/ubuntu/nginx/default.conf
+
+    - name: Copy config into Docker Container
+      shell: "docker cp /home/ubuntu/nginx/default.conf nginx-lb:/etc/nginx/conf.d/default.conf"
+
+    - name: Reload Nginx Container
+      shell: "docker exec nginx-lb nginx -s reload"

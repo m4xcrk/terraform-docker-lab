@@ -2,8 +2,8 @@ terraform {
   required_version = ">= 1.5.0"
 }
 
-# 1. VM-01: Nginx (Will become Load Balancer)
-resource "null_resource" "nginx" {
+# 1. VM-01: Operations Hub (Nginx LB, Prometheus, Grafana, Loki)
+resource "null_resource" "nginx_lb" {
   connection {
     type        = "ssh"
     user        = "ubuntu"
@@ -12,48 +12,13 @@ resource "null_resource" "nginx" {
   }
   provisioner "remote-exec" {
     inline = [
-      "sudo docker rm -f terraform-local-server || true",
-      "sudo docker run -d --restart always --name terraform-local-server -p 8085:80 nginx:latest"
+      "sudo docker rm -f nginx-lb || true",
+      "sudo docker run -d --restart always --name nginx-lb -p 80:80 nginx:latest"
     ]
   }
   triggers = { always_run = timestamp() }
 }
 
-# 2. VM-02: Apache Worker 1
-resource "null_resource" "apache" {
-  connection {
-    type        = "ssh"
-    user        = "ubuntu"
-    private_key = file(var.ssh_key_path)
-    host        = "192.168.2.13"
-  }
-  provisioner "remote-exec" {
-    inline = [
-      "sudo docker rm -f apache-server || true",
-      "sudo docker run -d --restart always --name apache-server -p 8086:80 httpd:latest"
-    ]
-  }
-  triggers = { always_run = timestamp() }
-}
-
-# 3. VM-03: Apache Worker 2
-resource "null_resource" "apache_worker_2" {
-  connection {
-    type        = "ssh"
-    user        = "ubuntu"
-    private_key = file(var.ssh_key_path)
-    host        = "192.168.2.15" 
-  }
-  provisioner "remote-exec" {
-    inline = [
-      "sudo docker rm -f apache-server || true",
-      "sudo docker run -d --restart always --name apache-server -p 8086:80 httpd:latest"
-    ]
-  }
-  triggers = { always_run = timestamp() }
-}
-
-# 4. Monitoring (Prometheus & Grafana) on VM-01
 resource "null_resource" "prometheus" {
   connection {
     type        = "ssh"
@@ -86,7 +51,41 @@ resource "null_resource" "grafana" {
   triggers = { always_run = timestamp() }
 }
 
-# 5. Unified Ansible Inventory (No Duplicates)
+resource "null_resource" "loki" {
+  connection {
+    type        = "ssh"
+    user        = "ubuntu"
+    private_key = file(var.ssh_key_path)
+    host        = "192.168.2.12"
+  }
+  provisioner "remote-exec" {
+    inline = [
+      "sudo docker rm -f loki || true",
+      "sudo docker run -d --restart always --name loki -p 3100:3100 grafana/loki:latest"
+    ]
+  }
+  triggers = { always_run = timestamp() }
+}
+
+# 2. Worker Nodes (VM-02 & VM-03)
+resource "null_resource" "apache_vms" {
+  for_each = toset(["192.168.2.13", "192.168.2.15"])
+  connection {
+    type        = "ssh"
+    user        = "ubuntu"
+    private_key = file(var.ssh_key_path)
+    host        = each.key
+  }
+  provisioner "remote-exec" {
+    inline = [
+      "sudo docker rm -f apache-server || true",
+      "sudo docker run -d --restart always --name apache-server -p 8086:80 httpd:latest"
+    ]
+  }
+  triggers = { always_run = timestamp() }
+}
+
+# 3. Inventory Generation
 resource "local_file" "ansible_inventory" {
   content  = <<EOT
 [lb]
@@ -102,4 +101,3 @@ ansible_ssh_private_key_file=~/.ssh/id_ed25519
 EOT
   filename = "${path.module}/inventory.ini"
 }
-

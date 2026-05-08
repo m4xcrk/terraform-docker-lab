@@ -1,9 +1,8 @@
 resource "helm_release" "redis_db" {
   name       = "my-db"
-  repository = "https://charts.bitnami.com/bitnami"
+  repository = "https://bitnami.com"
   chart      = "redis"
 
-  # We use 'set' to make the app "Lite" for our 2GB RAM VMs
   set {
     name  = "master.persistence.enabled"
     value = "false"
